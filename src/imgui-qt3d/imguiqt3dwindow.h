@@ -21,6 +21,7 @@ public:
     typedef std::function<void(Qt3DCore::QEntity *parent)> CreateSceneFunc;
     void setCreateSceneFunc(CreateSceneFunc f) { m_createScene = f; }
 
+    Qt3DRender::QLayer *guiTag() const { return m_guiTag; }
     Qt3DRender::QLayer *activeGuiTag() const { return m_activeGuiTag; }
 
 protected:

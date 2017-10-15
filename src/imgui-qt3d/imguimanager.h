@@ -5,6 +5,8 @@
 #include <QSize>
 #include <QEntity>
 
+class ImguiQt3DWindow;
+
 namespace Qt3DRender {
 class QBuffer;
 class QTexture2D;
@@ -21,10 +23,8 @@ class ImguiManager {
 public:
     typedef std::function<void()> FrameFunc;
     void setFrameFunc(FrameFunc f) { m_frame = f; }
-    typedef std::function<QSize()> DisplaySizeFunc;
-    void setDisplaySizeFunc(DisplaySizeFunc f) { m_displaySize = f; }
-    typedef std::function<Qt3DRender::QLayer *()> ActiveGuiTagFunc;
-    void setActiveGuiTagFunc(ActiveGuiTagFunc f) { m_activeGuiTag = f; }
+
+    void setWindow(ImguiQt3DWindow *window) { m_window = window; }
 
     void initialize(Qt3DCore::QEntity *rootEntity);
 
@@ -36,8 +36,7 @@ private:
     void update3D();
 
     FrameFunc m_frame = nullptr;
-    DisplaySizeFunc m_displaySize = nullptr;
-    ActiveGuiTagFunc m_activeGuiTag = nullptr;
+    ImguiQt3DWindow *m_window = nullptr;
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;

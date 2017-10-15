@@ -20,8 +20,7 @@ int main(int argc, char **argv)
     guiMgr.setFrameFunc(std::bind(&Gui::frame, &gui));
 
     ImguiQt3DWindow w;
-    guiMgr.setDisplaySizeFunc([&w]() { return w.size() * w.devicePixelRatio(); });
-    guiMgr.setActiveGuiTagFunc([&w]() { return w.activeGuiTag(); });
+    guiMgr.setWindow(&w);
 
     w.setCreateSceneFunc([&w, &guiMgr](Qt3DCore::QEntity *parent) {
         guiMgr.initialize(parent);

@@ -1,4 +1,5 @@
 #include "imguimanager.h"
+#include "imguiqt3dwindow.h"
 #include <imgui.h>
 
 #include <QImage>
@@ -69,8 +70,8 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
     QObject::connect(frameUpdater, &Qt3DLogic::QFrameAction::triggered, [this]() {
         if (!m_frame)
             return;
-        if (m_displaySize) {
-            const QSize size = m_displaySize();
+        if (m_window) {
+            const QSize size = m_window->size() * m_window->devicePixelRatio();
             ImGuiIO &io = ImGui::GetIO();
             io.DisplaySize.x = size.width();
             io.DisplaySize.y = size.height();
@@ -101,14 +102,16 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
 
 void ImguiManager::resizePool(CmdListEntry *e, int count)
 {
-    Qt3DRender::QLayer *guiTag = m_activeGuiTag();
-    Q_ASSERT(guiTag);
+    Qt3DRender::QLayer *guiTag = m_window->guiTag();
+    Qt3DRender::QLayer *activeGuiTag = m_window->activeGuiTag();
+    Q_ASSERT(guiTag && activeGuiTag);
 
     // do not resize when count is smaller
     if (e->cmds.count() < count) {
         e->cmds.resize(count);
         for (int i = 0; i < count; ++i) {
             Qt3DCore::QEntity *entity = new Qt3DCore::QEntity(m_rootEntity);
+            entity->addComponent(guiTag);
             entity->addComponent(buildMaterial(&e->cmds[i].scissor));
             Qt3DRender::QGeometryRenderer *geomRenderer = new Qt3DRender::QGeometryRenderer;
             entity->addComponent(geomRenderer);
@@ -120,10 +123,10 @@ void ImguiManager::resizePool(CmdListEntry *e, int count)
     // but make sure only entities from the first 'count' entries are tagged as active gui
     if (e->activeCount > count) {
         for (int i = count; i < e->activeCount; ++i)
-            e->cmds[i].entity->removeComponent(guiTag);
+            e->cmds[i].entity->removeComponent(activeGuiTag);
     } else if (e->activeCount < count) {
         for (int i = e->activeCount; i < count; ++i)
-            e->cmds[i].entity->addComponent(guiTag);
+            e->cmds[i].entity->addComponent(activeGuiTag);
     }
 
     e->activeCount = count;
