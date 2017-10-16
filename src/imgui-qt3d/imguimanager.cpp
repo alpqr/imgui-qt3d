@@ -283,6 +283,7 @@ void ImguiManager::update3D()
             resizePool(&m_cmdList[n], 0);
     }
 
+    float z = 1.0f;
     for (int n = 0; n < d->CmdListsCount; ++n) {
         const ImDrawList *cmdList = d->CmdLists[n];
         CmdListEntry *e = &m_cmdList[n];
@@ -294,12 +295,12 @@ void ImguiManager::update3D()
         // NB! must make a copy in any case, fromRawData would be wrong here
         // even if we did not need to insert the dummy z values.
         QByteArray vdata((const char *) cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-        // Initialize Z values. The shader does not need it but some Qt3D stuff (back-to-front sorting, bounding volumes, etc.) might.
+        // Initialize Z values. The shader does not need it but some Qt3D stuff (back-to-front sorting, bounding volumes) does.
         {
             ImDrawVert *v = (ImDrawVert *) vdata.data();
             int sz = cmdList->VtxBuffer.Size;
             while (sz-- > 0) {
-                v->z = 0.0f; // ###
+                v->z = z;
                 ++v;
             }
         }
@@ -331,6 +332,8 @@ void ImguiManager::update3D()
             }
             indexBufOffset += cmd->ElemCount;
         }
+
+        z -= 0.01f;
     }
 }
 
