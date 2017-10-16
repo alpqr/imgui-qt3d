@@ -49,6 +49,8 @@
 ****************************************************************************/
 
 #include <QGuiApplication>
+#include <QSurfaceFormat>
+#include <QOpenGLContext>
 #include <QPropertyAnimation>
 #include <QEntity>
 #include <QTransform>
@@ -65,11 +67,20 @@ int main(int argc, char **argv)
 {
     QGuiApplication app(argc, argv);
 
+    QSurfaceFormat fmt;
+    fmt.setDepthBufferSize(24);
+    if (QOpenGLContext::openGLModuleType() == QOpenGLContext::LibGL) {
+        fmt.setVersion(3, 2);
+        fmt.setProfile(QSurfaceFormat::CoreProfile);
+    }
+    QSurfaceFormat::setDefaultFormat(fmt);
+
     Gui gui;
     ImguiManager guiMgr;
     guiMgr.setFrameFunc(std::bind(&Gui::frame, &gui));
 
     ImguiQt3DWindow w;
+    w.setFormat(fmt);
     guiMgr.setWindow(&w);
 
     w.setCreateSceneFunc([&w, &guiMgr](Qt3DCore::QEntity *parent) {

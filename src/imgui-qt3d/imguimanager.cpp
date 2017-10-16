@@ -195,7 +195,7 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd
             g->addAttribute(new Qt3DRender::QAttribute);
 
         const int vsize = 3; // assumes ImDrawVert was overridden in imconfig.h
-        Q_ASSERT(sizeof(ImDrawVert) == sizeof(ImVec2) + sizeof(float) + sizeof(ImVec2) + sizeof(ImU32));
+        Q_ASSERT(sizeof(ImDrawVert) == (vsize + 2) * sizeof(float) + sizeof(ImU32));
 
         const QVector<Qt3DRender::QAttribute *> attrs = g->attributes();
         Qt3DRender::QAttribute *attr = attrs[0];
@@ -328,7 +328,7 @@ void ImguiManager::update3D()
     }
 }
 
-static const char *vertSrc =
+static const char *vertSrcES2 =
         "attribute vec4 vertexPosition;\n"
         "attribute vec4 vertexColor;\n"
         "attribute vec2 vertexTexCoord;\n"
@@ -341,7 +341,7 @@ static const char *vertSrc =
         "    gl_Position = projectionMatrix * vec4(vertexPosition.xy, 0.0, 1.0);\n"
         "}\n";
 
-static const char *fragSrc =
+static const char *fragSrcES2 =
         "uniform sampler2D tex;\n"
         "varying vec2 uv;\n"
         "varying vec4 color;\n"
@@ -349,47 +349,63 @@ static const char *fragSrc =
         "    gl_FragColor = color * texture2D(tex, uv);\n"
         "}\n";
 
-static Qt3DRender::QShaderProgram *buildShaderProgram()
-{
-    Qt3DRender::QShaderProgram *prog = new Qt3DRender::QShaderProgram;
-    prog->setVertexShaderCode(vertSrc);
-    prog->setFragmentShaderCode(fragSrc);
-    return prog;
-}
+static const char *vertSrcGL3 =
+        "#version 150\n"
+        "in vec4 vertexPosition;\n"
+        "in vec4 vertexColor;\n"
+        "in vec2 vertexTexCoord;\n"
+        "out vec2 uv;\n"
+        "out vec4 color;\n"
+        "uniform mat4 projectionMatrix;\n"
+        "void main() {\n"
+        "    uv = vertexTexCoord;\n"
+        "    color = vertexColor;\n"
+        "    gl_Position = projectionMatrix * vec4(vertexPosition.xy, 0.0, 1.0);\n"
+        "}\n";
+
+static const char *fragSrcGL3 =
+        "#version 150\n"
+        "uniform sampler2D tex;\n"
+        "in vec2 uv;\n"
+        "in vec4 color;\n"
+        "out vec4 fragColor;\n"
+        "void main() {\n"
+        "    fragColor = color * texture(tex, uv);\n"
+        "}\n";
 
 Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **scissor)
 {
     Qt3DRender::QMaterial *material = new Qt3DRender::QMaterial;
     Qt3DRender::QEffect *effect = new Qt3DRender::QEffect;
 
-    Qt3DRender::QTechnique *technique = new Qt3DRender::QTechnique;
-
     // the framegraph is expected to filter for this key in its gui pass
     Qt3DRender::QFilterKey *techniqueFilterKey = new Qt3DRender::QFilterKey;
     techniqueFilterKey->setName(QLatin1String("gui"));
     techniqueFilterKey->setValue(QLatin1String("1"));
-    technique->addFilterKey(techniqueFilterKey);
 
-    // ### only a 2.x technique for now, add a 3.2+ core profile one at some point
-    technique->graphicsApiFilter()->setApi(Qt3DRender::QGraphicsApiFilter::OpenGL);
-    technique->graphicsApiFilter()->setMajorVersion(2);
-    technique->graphicsApiFilter()->setMinorVersion(0);
+    auto buildShaderProgram = [](const char *vs, const char *fs) {
+        Qt3DRender::QShaderProgram *prog = new Qt3DRender::QShaderProgram;
+        prog->setVertexShaderCode(vs);
+        prog->setFragmentShaderCode(fs);
+        return prog;
+    };
 
-    Qt3DRender::QRenderPass *rpass = new Qt3DRender::QRenderPass;
-    if (!m_guiProg)
-        m_guiProg = buildShaderProgram();
-    rpass->setShaderProgram(m_guiProg);
+    if (!m_guiProgES2)
+        m_guiProgES2 = buildShaderProgram(vertSrcES2, fragSrcES2);
+
+    if (!m_guiProgGL3)
+        m_guiProgGL3 = buildShaderProgram(vertSrcGL3, fragSrcGL3);
+
+    *scissor = new Qt3DRender::QScissorTest;
 
     Qt3DRender::QParameter *texParam = new Qt3DRender::QParameter;
     texParam->setName(QLatin1String("tex"));
     texParam->setValue(QVariant::fromValue(m_atlasTex));
-    rpass->addParameter(texParam);
 
     Qt3DRender::QDepthTest *depthTest = new Qt3DRender::QDepthTest;
     depthTest->setDepthFunction(Qt3DRender::QDepthTest::Always);
-    rpass->addRenderState(depthTest);
 
-    rpass->addRenderState(new Qt3DRender::QNoDepthMask);
+    Qt3DRender::QNoDepthMask *noDepthWrite = new Qt3DRender::QNoDepthMask;
 
     Qt3DRender::QBlendEquation *blendFunc = new Qt3DRender::QBlendEquation;
     Qt3DRender::QBlendEquationArguments *blendArgs = new Qt3DRender::QBlendEquationArguments;
@@ -398,22 +414,51 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
     blendArgs->setDestinationRgb(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
     blendArgs->setSourceAlpha(Qt3DRender::QBlendEquationArguments::One);
     blendArgs->setDestinationAlpha(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
-    rpass->addRenderState(blendFunc);
-    rpass->addRenderState(blendArgs);
 
     Qt3DRender::QCullFace *cullFace = new Qt3DRender::QCullFace;
     cullFace->setMode(Qt3DRender::QCullFace::NoCulling);
-    rpass->addRenderState(cullFace);
 
-    *scissor = new Qt3DRender::QScissorTest;
-    rpass->addRenderState(*scissor);
+    // have two techniques: one for OpenGL ES (2.0+) and one for OpenGL core (3.2+)
 
-    // ###
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    auto buildRenderPass = [=](Qt3DRender::QShaderProgram *prog) {
+        Qt3DRender::QRenderPass *rpass = new Qt3DRender::QRenderPass;
+        rpass->setShaderProgram(prog);
 
-    technique->addRenderPass(rpass);
+        rpass->addParameter(texParam);
+        rpass->addRenderState(depthTest);
+        rpass->addRenderState(noDepthWrite);
+        rpass->addRenderState(blendFunc);
+        rpass->addRenderState(blendArgs);
+        rpass->addRenderState(cullFace);
+        rpass->addRenderState(*scissor);
 
-    effect->addTechnique(technique);
+        // ###
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        return rpass;
+    };
+
+    Qt3DRender::QTechnique *techniqueES2 = new Qt3DRender::QTechnique;
+    techniqueES2->addFilterKey(techniqueFilterKey);
+    Qt3DRender::QGraphicsApiFilter *apiFilterES2 = techniqueES2->graphicsApiFilter();
+    apiFilterES2->setApi(Qt3DRender::QGraphicsApiFilter::OpenGLES);
+    apiFilterES2->setMajorVersion(2);
+    apiFilterES2->setMinorVersion(0);
+    apiFilterES2->setProfile(Qt3DRender::QGraphicsApiFilter::NoProfile);
+    techniqueES2->addRenderPass(buildRenderPass(m_guiProgES2));
+
+    Qt3DRender::QTechnique *techniqueGL3 = new Qt3DRender::QTechnique;
+    techniqueGL3->addFilterKey(techniqueFilterKey);
+    Qt3DRender::QGraphicsApiFilter *apiFilterGL3 = techniqueGL3->graphicsApiFilter();
+    apiFilterGL3->setApi(Qt3DRender::QGraphicsApiFilter::OpenGL);
+    apiFilterGL3->setMajorVersion(3);
+    apiFilterGL3->setMinorVersion(2);
+    apiFilterGL3->setProfile(Qt3DRender::QGraphicsApiFilter::CoreProfile);
+    techniqueGL3->addRenderPass(buildRenderPass(m_guiProgGL3));
+
+    effect->addTechnique(techniqueES2);
+    effect->addTechnique(techniqueGL3);
+
     material->setEffect(effect);
 
     return material;

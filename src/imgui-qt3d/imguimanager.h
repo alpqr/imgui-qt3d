@@ -90,7 +90,8 @@ private:
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
-    Qt3DRender::QShaderProgram *m_guiProg = nullptr;
+    Qt3DRender::QShaderProgram *m_guiProgES2 = nullptr;
+    Qt3DRender::QShaderProgram *m_guiProgGL3 = nullptr;
 
     struct CmdEntry {
         Qt3DCore::QEntity *entity = nullptr;
