@@ -153,16 +153,16 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
     m_atlasTex->addTextureImage(new TextureImage(wrapperImg));
 }
 
-void ImguiManager::resizePool(CmdListEntry *e, int count)
+void ImguiManager::resizePool(CmdListEntry *e, int newSize)
 {
     Qt3DRender::QLayer *guiTag = m_window->guiTag();
     Qt3DRender::QLayer *activeGuiTag = m_window->activeGuiTag();
     Q_ASSERT(guiTag && activeGuiTag);
 
-    // do not resize when count is smaller
-    if (e->cmds.count() < count) {
-        e->cmds.resize(count);
-        for (int i = 0; i < count; ++i) {
+    const int oldSize = e->cmds.count();
+    if (newSize > oldSize) {
+        e->cmds.resize(newSize);
+        for (int i = oldSize; i < newSize; ++i) {
             Qt3DCore::QEntity *entity = new Qt3DCore::QEntity(m_rootEntity);
             entity->addComponent(guiTag);
             entity->addComponent(buildMaterial(&e->cmds[i].scissor));
@@ -173,16 +173,16 @@ void ImguiManager::resizePool(CmdListEntry *e, int count)
         }
     }
 
-    // but make sure only entities from the first 'count' entries are tagged as active gui
-    if (e->activeCount > count) {
-        for (int i = count; i < e->activeCount; ++i)
+    // make sure only entities from the first newSize entries are tagged as active gui
+    if (e->activeSize > newSize) {
+        for (int i = newSize; i < e->activeSize; ++i)
             e->cmds[i].entity->removeComponent(activeGuiTag);
-    } else if (e->activeCount < count) {
-        for (int i = e->activeCount; i < count; ++i)
+    } else if (e->activeSize < newSize) {
+        for (int i = e->activeSize; i < newSize; ++i)
             e->cmds[i].entity->addComponent(activeGuiTag);
     }
 
-    e->activeCount = count;
+    e->activeSize = newSize;
 }
 
 void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd, int vertexCount, int indexCount, const void *indexOffset)

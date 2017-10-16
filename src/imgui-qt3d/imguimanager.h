@@ -90,7 +90,7 @@ public:
 
 private:
     struct CmdListEntry;
-    void resizePool(CmdListEntry *e, int count);
+    void resizePool(CmdListEntry *e, int newSize);
     Qt3DRender::QMaterial *buildMaterial(Qt3DRender::QScissorTest **scissor);
     void updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd, int vertexCount, int indexCount, const void *indexOffset);
     void update3D();
@@ -125,7 +125,7 @@ private:
         Qt3DRender::QBuffer *vbuf = nullptr;
         Qt3DRender::QBuffer *ibuf = nullptr;
         QVector<CmdEntry> cmds;
-        int activeCount = 0;
+        int activeSize = 0;
     };
 
     QVector<CmdListEntry> m_cmdList;
