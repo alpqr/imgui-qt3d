@@ -294,12 +294,12 @@ void ImguiManager::update3D()
         // NB! must make a copy in any case, fromRawData would be wrong here
         // even if we did not need to insert the dummy z values.
         QByteArray vdata((const char *) cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
-        // Initialize Z values. The shader does not need it but some Qt3D stuff (bounding volumes etc.) might.
+        // Initialize Z values. The shader does not need it but some Qt3D stuff (back-to-front sorting, bounding volumes, etc.) might.
         {
             ImDrawVert *v = (ImDrawVert *) vdata.data();
             int sz = cmdList->VtxBuffer.Size;
             while (sz-- > 0) {
-                v->z = 0.0f;
+                v->z = 0.0f; // ###
                 ++v;
             }
         }
@@ -416,8 +416,8 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         q3d.blendFunc->setBlendFunction(Qt3DRender::QBlendEquation::Add);
         q3d.blendArgs->setSourceRgb(Qt3DRender::QBlendEquationArguments::SourceAlpha);
         q3d.blendArgs->setDestinationRgb(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
-        q3d.blendArgs->setSourceAlpha(Qt3DRender::QBlendEquationArguments::One);
-        q3d.blendArgs->setDestinationAlpha(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
+        q3d.blendArgs->setSourceAlpha(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
+        q3d.blendArgs->setDestinationAlpha(Qt3DRender::QBlendEquationArguments::Zero);
 
         q3d.cullFace = new Qt3DRender::QCullFace;
         q3d.cullFace->setMode(Qt3DRender::QCullFace::NoCulling);

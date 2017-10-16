@@ -67,6 +67,7 @@
 #include <QLayerFilter>
 #include <QLayer>
 #include <QCamera>
+#include <QSortPolicy>
 
 ImguiQt3DWindow::ImguiQt3DWindow()
 {
@@ -111,7 +112,7 @@ void ImguiQt3DWindow::createFramegraph()
 
     Qt3DRender::QRenderSettings *frameGraphComponent = new Qt3DRender::QRenderSettings(m_rootEntity);
 
-    // RenderSurfaceSelector -> Viewport -> (ClearBuffers -> NoDraw) | (CameraSelector -> TechniqueFilter -> LayerFilter) | (CameraSelector -> TechniqueFilter -> LayerFilter)
+    // RenderSurfaceSelector -> Viewport -> (ClearBuffers -> NoDraw) | (CameraSelector -> TechniqueFilter -> LayerFilter) | (CameraSelector -> TechniqueFilter -> SortPolicy -> LayerFilter)
 
     Qt3DRender::QRenderSurfaceSelector *targetSel = new Qt3DRender::QRenderSurfaceSelector;
 
@@ -164,8 +165,12 @@ void ImguiQt3DWindow::createFramegraph()
     tfilterkey->setName(QLatin1String("gui"));
     tfilterkey->setValue(QLatin1String("1"));
     tfilter->addMatch(tfilterkey);
+    // imgui provides "draw calls" in back-to-front order but that will get
+    // lost in the pipeline with Qt3D. Ensure via a SortPolicy instead.
+    Qt3DRender::QSortPolicy *sortPolicy = new Qt3DRender::QSortPolicy(tfilter);
+    sortPolicy->setSortTypes(QVector<Qt3DRender::QSortPolicy::SortType>() << Qt3DRender::QSortPolicy::BackToFront);
     // Only include entities for the _active_ gui in this pass.
-    lfilter = new Qt3DRender::QLayerFilter(tfilter);
+    lfilter = new Qt3DRender::QLayerFilter(sortPolicy);
     lfilter->addLayer(m_activeGuiTag);
 
     targetSel->setSurface(this);
