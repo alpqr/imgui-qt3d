@@ -6,3 +6,5 @@ Also a good example for integrating any foreign engine that streams vertex/index
 Tested with qt3d/dev.
 
 Input support is work in progress. Only mouse is supported for now.
+
+To get proper drawcall ordering (back to front), apply the included patch (0001-Base-BackToFront-sorting-key-on-z-value-only.patch) to Qt 3D.
