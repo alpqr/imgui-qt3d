@@ -175,17 +175,20 @@ void ImguiManager::resizePool(CmdListEntry *e, int newSize)
 
     // make sure only entities from the first newSize entries are tagged as active gui
     if (e->activeSize > newSize) {
-        for (int i = newSize; i < e->activeSize; ++i)
+        for (int i = newSize; i < e->activeSize; ++i) {
             e->cmds[i].entity->removeComponent(activeGuiTag);
+            updateGeometry(e, i, 0, 0, 0, nullptr);
+        }
     } else if (e->activeSize < newSize) {
         for (int i = e->activeSize; i < newSize; ++i)
             e->cmds[i].entity->addComponent(activeGuiTag);
+        // up to the caller to do updateGeometry for [0..newSize-1]
     }
 
     e->activeSize = newSize;
 }
 
-void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd, int vertexCount, int indexCount, const void *indexOffset)
+void ImguiManager::updateGeometry(CmdListEntry *e, int idx, uint elemCount, int vertexCount, int indexCount, const void *indexOffset)
 {
     Qt3DRender::QGeometryRenderer *gr = e->cmds[idx].geomRenderer;
     Qt3DRender::QGeometry *g = gr->geometry();
@@ -261,7 +264,7 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd
         attr->setByteOffset((quintptr) indexOffset);
     }
 
-    gr->setVertexCount(cmd->ElemCount);
+    gr->setVertexCount(elemCount);
 }
 
 // called once per frame, performs gui-related updates for the scene
@@ -316,7 +319,7 @@ void ImguiManager::update3D()
         for (int i = 0; i < cmdList->CmdBuffer.Size; ++i) {
             const ImDrawCmd *cmd = &cmdList->CmdBuffer[i];
             if (!cmd->UserCallback) {
-                updateGeometry(e, i, cmd, cmdList->VtxBuffer.Size, cmdList->IdxBuffer.Size, indexBufOffset);
+                updateGeometry(e, i, cmd->ElemCount, cmdList->VtxBuffer.Size, cmdList->IdxBuffer.Size, indexBufOffset);
 
                 Qt3DRender::QScissorTest *scissor = e->cmds[i].scissor;
                 scissor->setLeft(cmd->ClipRect.x);

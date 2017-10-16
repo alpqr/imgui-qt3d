@@ -75,8 +75,6 @@ class QBlendEquationArguments;
 class QCullFace;
 }
 
-struct ImDrawCmd;
-
 class ImguiManager {
 public:
     ~ImguiManager();
@@ -92,7 +90,7 @@ private:
     struct CmdListEntry;
     void resizePool(CmdListEntry *e, int newSize);
     Qt3DRender::QMaterial *buildMaterial(Qt3DRender::QScissorTest **scissor);
-    void updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd, int vertexCount, int indexCount, const void *indexOffset);
+    void updateGeometry(CmdListEntry *e, int idx, uint elemCount, int vertexCount, int indexCount, const void *indexOffset);
     void update3D();
     void updateInput();
 
