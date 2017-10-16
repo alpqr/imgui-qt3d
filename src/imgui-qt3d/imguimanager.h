@@ -66,6 +66,13 @@ class QLayer;
 class QGeometryRenderer;
 class QShaderProgram;
 class QScissorTest;
+class QParameter;
+class QFilterKey;
+class QDepthTest;
+class QNoDepthMask;
+class QBlendEquation;
+class QBlendEquationArguments;
+class QCullFace;
 }
 
 struct ImDrawCmd;
@@ -95,8 +102,18 @@ private:
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
-    Qt3DRender::QShaderProgram *m_guiProgES2 = nullptr;
-    Qt3DRender::QShaderProgram *m_guiProgGL3 = nullptr;
+    struct Shared3D {
+        bool valid = false;
+        Qt3DRender::QShaderProgram *progES2;
+        Qt3DRender::QShaderProgram *progGL3;
+        Qt3DRender::QFilterKey *techniqueFilterKey;
+        Qt3DRender::QParameter *texParam;
+        Qt3DRender::QDepthTest *depthTest;
+        Qt3DRender::QNoDepthMask *noDepthWrite;
+        Qt3DRender::QBlendEquation *blendFunc;
+        Qt3DRender::QBlendEquationArguments *blendArgs;
+        Qt3DRender::QCullFace *cullFace;
+    } q3d;
 
     struct CmdEntry {
         Qt3DCore::QEntity *entity = nullptr;
