@@ -52,6 +52,8 @@
 #include "imguiqt3dwindow.h"
 #include <imgui.h>
 
+#include <QMouseEvent>
+
 #include <QImage>
 #include <QTexture>
 #include <QAbstractTextureImage>
@@ -126,6 +128,7 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
             io.DisplaySize.x = size.width();
             io.DisplaySize.y = size.height();
         }
+        updateInput();
         ImGui::NewFrame();
         m_frame();
         ImGui::Render();
@@ -462,4 +465,63 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
     material->setEffect(effect);
 
     return material;
+}
+
+// Do not bother with 3D picking, assume the UI is displayed 1:1 in the window.
+
+class ImguiWindowEventFilter : public QObject
+{
+public:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
+    QPointF mousePos;
+    Qt::MouseButtons mouseButtonsDown = Qt::NoButton;
+};
+
+bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
+{
+    switch (event->type()) {
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseMove:
+    case QEvent::MouseButtonRelease:
+    {
+        QMouseEvent *me = static_cast<QMouseEvent *>(event);
+        mousePos = me->windowPos();
+        mouseButtonsDown = me->buttons();
+    }
+        break;
+
+    default:
+        break;
+    }
+
+    return false;
+}
+
+ImguiManager::~ImguiManager()
+{
+    delete m_windowEventFilter;
+}
+
+void ImguiManager::setWindow(ImguiQt3DWindow *window)
+{
+    if (m_window && m_windowEventFilter)
+        m_window->removeEventFilter(m_windowEventFilter);
+
+    m_window = window;
+
+    if (!m_windowEventFilter)
+        m_windowEventFilter = new ImguiWindowEventFilter;
+
+    m_window->installEventFilter(m_windowEventFilter);
+}
+
+void ImguiManager::updateInput()
+{
+    ImGuiIO &io = ImGui::GetIO();
+    ImguiWindowEventFilter *w = m_windowEventFilter;
+    io.MousePos = ImVec2(w->mousePos.x(), w->mousePos.y());
+    io.MouseDown[0] = w->mouseButtonsDown.testFlag(Qt::LeftButton);
+    io.MouseDown[1] = w->mouseButtonsDown.testFlag(Qt::RightButton);
+    io.MouseDown[2] = w->mouseButtonsDown.testFlag(Qt::MiddleButton);
 }

@@ -56,6 +56,7 @@
 #include <QEntity>
 
 class ImguiQt3DWindow;
+class ImguiWindowEventFilter;
 
 namespace Qt3DRender {
 class QBuffer;
@@ -71,10 +72,12 @@ struct ImDrawCmd;
 
 class ImguiManager {
 public:
+    ~ImguiManager();
+
     typedef std::function<void()> FrameFunc;
     void setFrameFunc(FrameFunc f) { m_frame = f; }
 
-    void setWindow(ImguiQt3DWindow *window) { m_window = window; }
+    void setWindow(ImguiQt3DWindow *window);
 
     void initialize(Qt3DCore::QEntity *rootEntity);
 
@@ -84,9 +87,11 @@ private:
     Qt3DRender::QMaterial *buildMaterial(Qt3DRender::QScissorTest **scissor);
     void updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd, int vertexCount, int indexCount, const void *indexOffset);
     void update3D();
+    void updateInput();
 
     FrameFunc m_frame = nullptr;
     ImguiQt3DWindow *m_window = nullptr;
+    ImguiWindowEventFilter *m_windowEventFilter = nullptr;
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
