@@ -56,3 +56,12 @@ namespace ImGui
 }
 */
 
+// Qt3D does not like 2 component position attributes (in bounding volume calculation for instance).
+// Therefore, add a z vertex coordinate.
+#define IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT \
+    struct ImDrawVert { \
+        ImVec2 pos; \
+        float z; \
+        ImVec2 uv; \
+        ImU32 col; \
+    };

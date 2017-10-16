@@ -194,14 +194,15 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd
         for (int i = 0; i < 4; ++i)
             g->addAttribute(new Qt3DRender::QAttribute);
 
+        const int vsize = 3; // assumes ImDrawVert was overridden in imconfig.h
+        Q_ASSERT(sizeof(ImDrawVert) == sizeof(ImVec2) + sizeof(float) + sizeof(ImVec2) + sizeof(ImU32));
+
         const QVector<Qt3DRender::QAttribute *> attrs = g->attributes();
         Qt3DRender::QAttribute *attr = attrs[0];
         attr->setBuffer(e->vbuf);
         attr->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
         attr->setVertexBaseType(Qt3DRender::QAttribute::Float);
-        // ### For now this floods the output with "position Attribute not suited for bounding volume computation".
-        // Qt 3D has to be fixed to handle 2 component position attributes more gracefully.
-        attr->setVertexSize(2);
+        attr->setVertexSize(vsize);
         attr->setCount(vertexCount);
         attr->setByteOffset(0);
         attr->setByteStride(sizeof(ImDrawVert));
@@ -212,7 +213,7 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd
         attr->setVertexBaseType(Qt3DRender::QAttribute::Float);
         attr->setVertexSize(2);
         attr->setCount(vertexCount);
-        attr->setByteOffset(sizeof(ImVec2));
+        attr->setByteOffset(vsize * sizeof(float));
         attr->setByteStride(sizeof(ImDrawVert));
 
         attr = attrs[2];
@@ -221,7 +222,7 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, const ImDrawCmd *cmd
         attr->setVertexBaseType(Qt3DRender::QAttribute::UnsignedByte);
         attr->setVertexSize(4);
         attr->setCount(vertexCount);
-        attr->setByteOffset(2 * sizeof(ImVec2));
+        attr->setByteOffset((vsize + 2) * sizeof(float));
         attr->setByteStride(sizeof(ImDrawVert));
 
         attr = attrs[3];
@@ -285,8 +286,19 @@ void ImguiManager::update3D()
             e->vbuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer);
             e->vbuf->setUsage(Qt3DRender::QBuffer::StreamDraw);
         }
-        // NB! must make a copy, fromRawData would be wrong here
-        e->vbuf->setData(QByteArray((const char *) cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert)));
+        // NB! must make a copy in any case, fromRawData would be wrong here
+        // even if we did not need to insert the dummy z values.
+        QByteArray vdata((const char *) cmdList->VtxBuffer.Data, cmdList->VtxBuffer.Size * sizeof(ImDrawVert));
+        // Initialize Z values. The shader does not need it but some Qt3D stuff (bounding volumes etc.) might.
+        {
+            ImDrawVert *v = (ImDrawVert *) vdata.data();
+            int sz = cmdList->VtxBuffer.Size;
+            while (sz-- > 0) {
+                v->z = 0.0f;
+                ++v;
+            }
+        }
+        e->vbuf->setData(vdata);
 
         if (!e->ibuf) {
             e->ibuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::IndexBuffer);
