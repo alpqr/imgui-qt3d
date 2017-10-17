@@ -283,7 +283,10 @@ void ImguiManager::update3D()
             resizePool(&m_cmdList[n], 0);
     }
 
-    float z = 1.0f;
+    // CmdLists is in back-to-front order, assign z values accordingly
+    const float zstep = 0.01f;
+    float z = d->CmdListsCount * -zstep;
+
     for (int n = 0; n < d->CmdListsCount; ++n) {
         const ImDrawList *cmdList = d->CmdLists[n];
         CmdListEntry *e = &m_cmdList[n];
@@ -333,7 +336,7 @@ void ImguiManager::update3D()
             indexBufOffset += cmd->ElemCount;
         }
 
-        z -= 0.01f;
+        z += zstep;
     }
 }
 
