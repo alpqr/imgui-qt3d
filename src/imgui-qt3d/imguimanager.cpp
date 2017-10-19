@@ -486,6 +486,7 @@ public:
 
     QPointF mousePos;
     Qt::MouseButtons mouseButtonsDown = Qt::NoButton;
+    Qt::KeyboardModifiers modifiers = Qt::NoModifier;
 };
 
 bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
@@ -498,6 +499,7 @@ bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
         QMouseEvent *me = static_cast<QMouseEvent *>(event);
         mousePos = me->windowPos();
         mouseButtonsDown = me->buttons();
+        modifiers = me->modifiers();
     }
         break;
 
@@ -534,4 +536,9 @@ void ImguiManager::updateInput()
     io.MouseDown[0] = w->mouseButtonsDown.testFlag(Qt::LeftButton);
     io.MouseDown[1] = w->mouseButtonsDown.testFlag(Qt::RightButton);
     io.MouseDown[2] = w->mouseButtonsDown.testFlag(Qt::MiddleButton);
+
+    io.KeyCtrl = w->modifiers.testFlag(Qt::ControlModifier);
+    io.KeyShift = w->modifiers.testFlag(Qt::ShiftModifier);
+    io.KeyAlt = w->modifiers.testFlag(Qt::AltModifier);
+    io.KeySuper = w->modifiers.testFlag(Qt::MetaModifier);
 }
