@@ -53,6 +53,7 @@
 #include <imgui.h>
 
 #include <QMouseEvent>
+#include <QKeyEvent>
 
 #include <QImage>
 #include <QTexture>
@@ -477,16 +478,26 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
     return material;
 }
 
-// Do not bother with 3D picking, assume the UI is displayed 1:1 in the window.
+#define FIRSTSPECKEY (0x01000000)
+#define LASTSPECKEY (0x01000017)
+#define MAPSPECKEY(k) ((k) - FIRSTSPECKEY + 256)
 
+// Do not bother with 3D picking, assume the UI is displayed 1:1 in the window.
 class ImguiWindowEventFilter : public QObject
 {
 public:
+    ImguiWindowEventFilter()
+    {
+        memset(keyDown, 0, sizeof(keyDown));
+    }
+
     bool eventFilter(QObject *watched, QEvent *event) override;
 
     QPointF mousePos;
     Qt::MouseButtons mouseButtonsDown = Qt::NoButton;
     Qt::KeyboardModifiers modifiers = Qt::NoModifier;
+    bool keyDown[256 + (LASTSPECKEY - FIRSTSPECKEY + 1)];
+    QString keyText;
 };
 
 bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
@@ -500,6 +511,22 @@ bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
         mousePos = me->windowPos();
         mouseButtonsDown = me->buttons();
         modifiers = me->modifiers();
+    }
+        break;
+
+    case QEvent::KeyPress:
+    case QEvent::KeyRelease:
+    {
+        const bool down = event->type() == QEvent::KeyPress;
+        QKeyEvent *ke = static_cast<QKeyEvent *>(event);
+        modifiers = ke->modifiers();
+        if (down)
+            keyText.append(ke->text());
+        int k = ke->key();
+        if (k <= 0xFF)
+            keyDown[k] = down;
+        else if (k >= FIRSTSPECKEY && k <= LASTSPECKEY)
+            keyDown[MAPSPECKEY(k)] = down;
     }
         break;
 
@@ -531,8 +558,36 @@ void ImguiManager::setWindow(ImguiQt3DWindow *window)
 void ImguiManager::updateInput()
 {
     ImGuiIO &io = ImGui::GetIO();
+
+    if (!m_inputInitialized) {
+        m_inputInitialized = true;
+
+        io.KeyMap[ImGuiKey_Tab] = MAPSPECKEY(Qt::Key_Tab);
+        io.KeyMap[ImGuiKey_LeftArrow] = MAPSPECKEY(Qt::Key_Left);
+        io.KeyMap[ImGuiKey_RightArrow] = MAPSPECKEY(Qt::Key_Right);
+        io.KeyMap[ImGuiKey_UpArrow] = MAPSPECKEY(Qt::Key_Up);
+        io.KeyMap[ImGuiKey_DownArrow] = MAPSPECKEY(Qt::Key_Down);
+        io.KeyMap[ImGuiKey_PageUp] = MAPSPECKEY(Qt::Key_PageUp);
+        io.KeyMap[ImGuiKey_PageDown] = MAPSPECKEY(Qt::Key_PageDown);
+        io.KeyMap[ImGuiKey_Home] = MAPSPECKEY(Qt::Key_Home);
+        io.KeyMap[ImGuiKey_End] = MAPSPECKEY(Qt::Key_End);
+        io.KeyMap[ImGuiKey_Delete] = MAPSPECKEY(Qt::Key_Delete);
+        io.KeyMap[ImGuiKey_Backspace] = MAPSPECKEY(Qt::Key_Backspace);
+        io.KeyMap[ImGuiKey_Enter] = MAPSPECKEY(Qt::Key_Return);
+        io.KeyMap[ImGuiKey_Escape] = MAPSPECKEY(Qt::Key_Escape);
+
+        io.KeyMap[ImGuiKey_A] = Qt::Key_A;
+        io.KeyMap[ImGuiKey_C] = Qt::Key_C;
+        io.KeyMap[ImGuiKey_V] = Qt::Key_V;
+        io.KeyMap[ImGuiKey_X] = Qt::Key_X;
+        io.KeyMap[ImGuiKey_Y] = Qt::Key_Y;
+        io.KeyMap[ImGuiKey_Z] = Qt::Key_Z;
+    }
+
     ImguiWindowEventFilter *w = m_windowEventFilter;
+
     io.MousePos = ImVec2(w->mousePos.x(), w->mousePos.y());
+
     io.MouseDown[0] = w->mouseButtonsDown.testFlag(Qt::LeftButton);
     io.MouseDown[1] = w->mouseButtonsDown.testFlag(Qt::RightButton);
     io.MouseDown[2] = w->mouseButtonsDown.testFlag(Qt::MiddleButton);
@@ -541,4 +596,15 @@ void ImguiManager::updateInput()
     io.KeyShift = w->modifiers.testFlag(Qt::ShiftModifier);
     io.KeyAlt = w->modifiers.testFlag(Qt::AltModifier);
     io.KeySuper = w->modifiers.testFlag(Qt::MetaModifier);
+
+    memcpy(io.KeysDown, w->keyDown, sizeof(w->keyDown));
+
+    if (!w->keyText.isEmpty()) {
+        for (const QChar &c : w->keyText) {
+            ImWchar u = c.unicode();
+            if (u > 0 && u < 0x10000)
+                io.AddInputCharacter(u);
+        }
+        w->keyText.clear();
+    }
 }

@@ -97,6 +97,7 @@ private:
     FrameFunc m_frame = nullptr;
     ImguiQt3DWindow *m_window = nullptr;
     ImguiWindowEventFilter *m_windowEventFilter = nullptr;
+    bool m_inputInitialized = false;
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
