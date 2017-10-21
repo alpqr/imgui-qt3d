@@ -55,8 +55,7 @@
 #include <QSize>
 #include <QEntity>
 
-class ImguiQt3DWindow;
-class ImguiWindowEventFilter;
+class ImguiInputEventFilter;
 
 namespace Qt3DRender {
 class QBuffer;
@@ -82,7 +81,15 @@ public:
     typedef std::function<void()> FrameFunc;
     void setFrameFunc(FrameFunc f) { m_frame = f; }
 
-    void setWindow(ImguiQt3DWindow *window);
+    void setInputEventSource(QObject *src);
+
+    struct OutputInfo {
+        QSize size;
+        Qt3DRender::QLayer *guiTag;
+        Qt3DRender::QLayer *activeGuiTag;
+    };
+    typedef std::function<OutputInfo()> OutputInfoFunc;
+    void setOutputInfoFunc(OutputInfoFunc f) { m_outputInfoFunc = f; }
 
     void initialize(Qt3DCore::QEntity *rootEntity);
 
@@ -95,8 +102,10 @@ private:
     void updateInput();
 
     FrameFunc m_frame = nullptr;
-    ImguiQt3DWindow *m_window = nullptr;
-    ImguiWindowEventFilter *m_windowEventFilter = nullptr;
+    OutputInfoFunc m_outputInfoFunc = nullptr;
+    OutputInfo m_outputInfo;
+    QObject *m_inputEventSource = nullptr;
+    ImguiInputEventFilter *m_inputEventFilter = nullptr;
     bool m_inputInitialized = false;
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;

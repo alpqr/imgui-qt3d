@@ -49,13 +49,12 @@
 ****************************************************************************/
 
 #include "imguimanager.h"
-#include "imguiqt3dwindow.h"
 #include <imgui.h>
 
 #include <QMouseEvent>
 #include <QKeyEvent>
-
 #include <QImage>
+
 #include <QTexture>
 #include <QAbstractTextureImage>
 #include <QTextureImageDataGenerator>
@@ -121,18 +120,21 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
 
     Qt3DLogic::QFrameAction *frameUpdater = new Qt3DLogic::QFrameAction;
     QObject::connect(frameUpdater, &Qt3DLogic::QFrameAction::triggered, [this]() {
-        if (!m_frame)
+        if (!m_frame || !m_outputInfoFunc)
             return;
-        if (m_window) {
-            const QSize size = m_window->size() * m_window->devicePixelRatio();
-            ImGuiIO &io = ImGui::GetIO();
-            io.DisplaySize.x = size.width();
-            io.DisplaySize.y = size.height();
-        }
+
+        m_outputInfo = m_outputInfoFunc();
+
+        ImGuiIO &io = ImGui::GetIO();
+        io.DisplaySize.x = m_outputInfo.size.width();
+        io.DisplaySize.y = m_outputInfo.size.height();
+
         updateInput();
+
         ImGui::NewFrame();
         m_frame();
         ImGui::Render();
+
         update3D();
     });
 
@@ -156,16 +158,14 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
 
 void ImguiManager::resizePool(CmdListEntry *e, int newSize)
 {
-    Qt3DRender::QLayer *guiTag = m_window->guiTag();
-    Qt3DRender::QLayer *activeGuiTag = m_window->activeGuiTag();
-    Q_ASSERT(guiTag && activeGuiTag);
+    Q_ASSERT(m_outputInfo.guiTag && m_outputInfo.activeGuiTag);
 
     const int oldSize = e->cmds.count();
     if (newSize > oldSize) {
         e->cmds.resize(newSize);
         for (int i = oldSize; i < newSize; ++i) {
             Qt3DCore::QEntity *entity = new Qt3DCore::QEntity(m_rootEntity);
-            entity->addComponent(guiTag);
+            entity->addComponent(m_outputInfo.guiTag);
             entity->addComponent(buildMaterial(&e->cmds[i].scissor));
             Qt3DRender::QGeometryRenderer *geomRenderer = new Qt3DRender::QGeometryRenderer;
             entity->addComponent(geomRenderer);
@@ -177,12 +177,12 @@ void ImguiManager::resizePool(CmdListEntry *e, int newSize)
     // make sure only entities from the first newSize entries are tagged as active gui
     if (e->activeSize > newSize) {
         for (int i = newSize; i < e->activeSize; ++i) {
-            e->cmds[i].entity->removeComponent(activeGuiTag);
+            e->cmds[i].entity->removeComponent(m_outputInfo.activeGuiTag);
             updateGeometry(e, i, 0, 0, 0, nullptr);
         }
     } else if (e->activeSize < newSize) {
         for (int i = e->activeSize; i < newSize; ++i)
-            e->cmds[i].entity->addComponent(activeGuiTag);
+            e->cmds[i].entity->addComponent(m_outputInfo.activeGuiTag);
         // up to the caller to do updateGeometry for [0..newSize-1]
     }
 
@@ -273,8 +273,6 @@ void ImguiManager::update3D()
 {
     ImDrawData *d = ImGui::GetDrawData();
     ImGuiIO &io = ImGui::GetIO();
-
-    // ### d->ScaleClipRects
 
     if (m_cmdList.count() < d->CmdListsCount) {
         m_cmdList.resize(d->CmdListsCount);
@@ -446,9 +444,6 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         rpass->addRenderState(q3d.cullFace);
         rpass->addRenderState(*scissor);
 
-        // ###
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
         return rpass;
     };
 
@@ -483,10 +478,10 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
 #define MAPSPECKEY(k) ((k) - FIRSTSPECKEY + 256)
 
 // Do not bother with 3D picking, assume the UI is displayed 1:1 in the window.
-class ImguiWindowEventFilter : public QObject
+class ImguiInputEventFilter : public QObject
 {
 public:
-    ImguiWindowEventFilter()
+    ImguiInputEventFilter()
     {
         memset(keyDown, 0, sizeof(keyDown));
     }
@@ -501,7 +496,7 @@ public:
     QString keyText;
 };
 
-bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
+bool ImguiInputEventFilter::eventFilter(QObject *, QEvent *event)
 {
     switch (event->type()) {
     case QEvent::MouseButtonPress:
@@ -547,20 +542,20 @@ bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
 
 ImguiManager::~ImguiManager()
 {
-    delete m_windowEventFilter;
+    delete m_inputEventFilter;
 }
 
-void ImguiManager::setWindow(ImguiQt3DWindow *window)
+void ImguiManager::setInputEventSource(QObject *src)
 {
-    if (m_window && m_windowEventFilter)
-        m_window->removeEventFilter(m_windowEventFilter);
+    if (m_inputEventSource && m_inputEventFilter)
+        m_inputEventSource->removeEventFilter(m_inputEventFilter);
 
-    m_window = window;
+    m_inputEventSource = src;
 
-    if (!m_windowEventFilter)
-        m_windowEventFilter = new ImguiWindowEventFilter;
+    if (!m_inputEventFilter)
+        m_inputEventFilter = new ImguiInputEventFilter;
 
-    m_window->installEventFilter(m_windowEventFilter);
+    m_inputEventSource->installEventFilter(m_inputEventFilter);
 }
 
 void ImguiManager::updateInput()
@@ -592,7 +587,7 @@ void ImguiManager::updateInput()
         io.KeyMap[ImGuiKey_Z] = Qt::Key_Z;
     }
 
-    ImguiWindowEventFilter *w = m_windowEventFilter;
+    ImguiInputEventFilter *w = m_inputEventFilter;
 
     io.MousePos = ImVec2(w->mousePos.x(), w->mousePos.y());
 
