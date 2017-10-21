@@ -495,6 +495,7 @@ public:
 
     QPointF mousePos;
     Qt::MouseButtons mouseButtonsDown = Qt::NoButton;
+    float mouseWheel = 0;
     Qt::KeyboardModifiers modifiers = Qt::NoModifier;
     bool keyDown[256 + (LASTSPECKEY - FIRSTSPECKEY + 1)];
     QString keyText;
@@ -511,6 +512,13 @@ bool ImguiWindowEventFilter::eventFilter(QObject *, QEvent *event)
         mousePos = me->windowPos();
         mouseButtonsDown = me->buttons();
         modifiers = me->modifiers();
+    }
+        break;
+
+    case QEvent::Wheel:
+    {
+        QWheelEvent *we = static_cast<QWheelEvent *>(event);
+        mouseWheel += we->angleDelta().y() / 120.0f;
     }
         break;
 
@@ -591,6 +599,9 @@ void ImguiManager::updateInput()
     io.MouseDown[0] = w->mouseButtonsDown.testFlag(Qt::LeftButton);
     io.MouseDown[1] = w->mouseButtonsDown.testFlag(Qt::RightButton);
     io.MouseDown[2] = w->mouseButtonsDown.testFlag(Qt::MiddleButton);
+
+    io.MouseWheel = w->mouseWheel;
+    w->mouseWheel = 0;
 
     io.KeyCtrl = w->modifiers.testFlag(Qt::ControlModifier);
     io.KeyShift = w->modifiers.testFlag(Qt::ShiftModifier);
