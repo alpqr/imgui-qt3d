@@ -57,6 +57,7 @@
 #include <QLogicAspect>
 
 #include <QRenderSettings>
+#include <QInputSettings>
 #include <QRenderSurfaceSelector>
 #include <QViewport>
 #include <QCameraSelector>
@@ -176,4 +177,8 @@ void ImguiQt3DWindow::createFramegraph()
     targetSel->setSurface(this);
     frameGraphComponent->setActiveFrameGraph(targetSel);
     m_rootEntity->addComponent(frameGraphComponent);
+
+    Qt3DInput::QInputSettings *inputSettings = new Qt3DInput::QInputSettings;
+    inputSettings->setEventSource(this);
+    m_rootEntity->addComponent(inputSettings);
 }

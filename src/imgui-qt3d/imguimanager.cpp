@@ -430,7 +430,7 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
 
     // have two techniques: one for OpenGL ES (2.0+) and one for OpenGL core (3.2+)
 
-    auto buildRenderPass = [=](Qt3DRender::QShaderProgram *prog) {
+    auto buildRenderPass = [this, scissor](Qt3DRender::QShaderProgram *prog) {
         Qt3DRender::QRenderPass *rpass = new Qt3DRender::QRenderPass;
         rpass->setShaderProgram(prog);
 
@@ -441,6 +441,11 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         rpass->addRenderState(q3d.blendArgs);
         rpass->addRenderState(q3d.cullFace);
         rpass->addRenderState(*scissor);
+
+        // Our setEnabled() maps to QNode::setEnabled() on the QRenderPass
+        // hence the need for keeping track. This is simpler than playing with
+        // QLayer on entities.
+        q3d.enabledToggle.append(rpass);
 
         return rpass;
     };
@@ -611,4 +616,15 @@ void ImguiManager::updateInput()
         }
         w->keyText.clear();
     }
+}
+
+void ImguiManager::setEnabled(bool enabled)
+{
+    if (m_enabled == enabled)
+        return;
+
+    m_enabled = enabled;
+
+    for (Qt3DCore::QNode *n : q3d.enabledToggle)
+        n->setEnabled(m_enabled);
 }

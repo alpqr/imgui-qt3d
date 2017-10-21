@@ -94,6 +94,9 @@ public:
 
     void initialize(Qt3DCore::QEntity *rootEntity);
 
+    bool isEnabled() const { return m_enabled; }
+    void setEnabled(bool enabled);
+
 private:
     struct CmdListEntry;
     void resizePool(CmdListEntry *e, int newSize);
@@ -108,6 +111,7 @@ private:
     QObject *m_inputEventSource = nullptr;
     ImguiInputEventFilter *m_inputEventFilter = nullptr;
     bool m_inputInitialized = false;
+    bool m_enabled = true;
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
@@ -122,6 +126,7 @@ private:
         Qt3DRender::QBlendEquation *blendFunc;
         Qt3DRender::QBlendEquationArguments *blendArgs;
         Qt3DRender::QCullFace *cullFace;
+        QVector<Qt3DCore::QNode *> enabledToggle;
     } q3d;
 
     struct CmdEntry {

@@ -56,7 +56,10 @@
 #include <QTransform>
 #include <QCuboidMesh>
 #include <QTorusMesh>
+#include <QSphereMesh>
 #include <QPhongMaterial>
+#include <QObjectPicker>
+#include <QPickEvent>
 
 #include "imguimanager.h"
 #include "imguiqt3dwindow.h"
@@ -115,10 +118,9 @@ int main(int argc, char **argv)
         cubeGeom2->setSlices(20);
         Qt3DCore::QTransform *cubeTrans2 = new Qt3DCore::QTransform;
         cubeTrans2->setTranslation(QVector3D(-15, -4, -20));
-        Qt3DExtras::QPhongMaterial *cubeMat2 = new Qt3DExtras::QPhongMaterial;
         cube2->addComponent(cubeGeom2);
         cube2->addComponent(cubeTrans2);
-        cube2->addComponent(cubeMat2);
+        cube2->addComponent(cubeMat);
 
         auto rotAnim = [](QObject *obj, const QByteArray &name, float start, float end, int duration) {
             QPropertyAnimation *anim = new QPropertyAnimation(obj, name);
@@ -130,6 +132,25 @@ int main(int argc, char **argv)
         };
         rotAnim(cubeTrans, "rotationX", 0.0f, 360.0f, 5000);
         rotAnim(cubeTrans2, "rotationY", 0.0f, 360.0f, 5000);
+
+        // an entity that toggles the gui when pressed.
+        // replace with a QText2DEntity some day when it actually works. in the meantime a sphere will do.
+        Qt3DCore::QEntity *toggleText = new Qt3DCore::QEntity(parent);
+        Qt3DExtras::QSphereMesh *toggleTextGeom = new Qt3DExtras::QSphereMesh;
+        Qt3DCore::QTransform *toggleTextTrans = new Qt3DCore::QTransform;
+        toggleTextTrans->setTranslation(QVector3D(-14, 7, -5));
+        toggleTextTrans->setScale(0.5f);
+        Qt3DExtras::QPhongMaterial *toggleTextMat = new Qt3DExtras::QPhongMaterial;
+        toggleTextMat->setDiffuse(Qt::green);
+        toggleText->addComponent(toggleTextGeom);
+        toggleText->addComponent(toggleTextTrans);
+        toggleText->addComponent(toggleTextMat);
+        Qt3DRender::QObjectPicker *toggleTextPicker = new Qt3DRender::QObjectPicker;
+        QObject::connect(toggleTextPicker, &Qt3DRender::QObjectPicker::pressed, [toggleTextMat, &guiMgr](Qt3DRender::QPickEvent *) {
+            guiMgr.setEnabled(!guiMgr.isEnabled());
+            toggleTextMat->setDiffuse(guiMgr.isEnabled() ? Qt::green : Qt::red);
+        });
+        toggleText->addComponent(toggleTextPicker);
     });
 
     w.resize(1280, 720);
