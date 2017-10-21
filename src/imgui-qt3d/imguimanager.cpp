@@ -131,6 +131,11 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
 
         updateInput();
 
+        // One weakness regarding input is that io.WantCaptureMouse/Keyboard
+        // cannot really be supported. We could check for them after the
+        // NewFrame() call below, but there is nothing we can do at this stage,
+        // the Qt events have already been dispatched and processed.
+
         ImGui::NewFrame();
         m_frame();
         ImGui::Render();
