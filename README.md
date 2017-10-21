@@ -3,5 +3,6 @@ meaning that direct usage of OpenGL or other graphics APIs is avoided and no pri
 
 Also a good example for integrating any foreign engine that streams vertex/index data.
 
-Tested with qt3d/dev. Should work with 5.10 and 5.9 too but those have not been tested. BackToFront sorting is broken at the moment, so to get correct window
-stacking cherry pick https://codereview.qt-project.org/#/c/208573/
+Tested with qt3d/dev. Should work with 5.10 and 5.9 too but those have not been tested.
+BackToFront sorting (needed for correct window stacking) got fixed recently in qt3d/5.9 by https://codereview.qt-project.org/#/c/208573/
+and will take some time to trickle down to 5.10 and dev.
