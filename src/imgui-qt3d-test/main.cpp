@@ -87,6 +87,7 @@ int main(int argc, char **argv)
         inf.size = w.size() * w.devicePixelRatio();
         inf.guiTag = w.guiTag();
         inf.activeGuiTag = w.activeGuiTag();
+        inf.guiTechniqueFilterKey = w.guiTechniqueFilterKey();
         return inf;
     });
 

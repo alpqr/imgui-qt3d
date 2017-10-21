@@ -87,6 +87,7 @@ public:
         QSize size;
         Qt3DRender::QLayer *guiTag;
         Qt3DRender::QLayer *activeGuiTag;
+        Qt3DRender::QFilterKey *guiTechniqueFilterKey;
     };
     typedef std::function<OutputInfo()> OutputInfoFunc;
     void setOutputInfoFunc(OutputInfoFunc f) { m_outputInfoFunc = f; }

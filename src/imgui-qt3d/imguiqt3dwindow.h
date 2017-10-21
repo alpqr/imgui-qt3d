@@ -58,6 +58,7 @@
 namespace Qt3DRender {
 class QCamera;
 class QLayer;
+class QFilterKey;
 }
 
 // Provides a window with a Qt3D scene and a framegraph with a gui pass. This
@@ -73,6 +74,7 @@ public:
 
     Qt3DRender::QLayer *guiTag() const { return m_guiTag; }
     Qt3DRender::QLayer *activeGuiTag() const { return m_activeGuiTag; }
+    Qt3DRender::QFilterKey *guiTechniqueFilterKey() const { return m_guiTechniqueFilterKey; }
 
 protected:
     void exposeEvent(QExposeEvent *) override;
@@ -88,6 +90,7 @@ private:
     Qt3DRender::QCamera *m_guiCamera = nullptr;
     Qt3DRender::QLayer *m_guiTag = nullptr;
     Qt3DRender::QLayer *m_activeGuiTag = nullptr;
+    Qt3DRender::QFilterKey *m_guiTechniqueFilterKey = nullptr;
 
     CreateSceneFunc m_createScene = nullptr;
 };

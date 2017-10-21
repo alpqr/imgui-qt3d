@@ -403,9 +403,7 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         q3d.progGL3 = buildShaderProgram(vertSrcGL3, fragSrcGL3);
 
         // the framegraph is expected to filter for this key in its gui pass
-        q3d.techniqueFilterKey = new Qt3DRender::QFilterKey;
-        q3d.techniqueFilterKey->setName(QLatin1String("gui"));
-        q3d.techniqueFilterKey->setValue(QLatin1String("1"));
+        q3d.techniqueFilterKey = m_outputInfo.guiTechniqueFilterKey;
 
         q3d.texParam = new Qt3DRender::QParameter;
         q3d.texParam->setName(QLatin1String("tex"));

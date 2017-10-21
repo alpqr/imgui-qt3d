@@ -126,6 +126,9 @@ void ImguiQt3DWindow::createFramegraph()
 
     m_guiTag = new Qt3DRender::QLayer; // all gui entities are tagged with this
     m_activeGuiTag = new Qt3DRender::QLayer; // active gui entities - added/removed to entities dynamically by imguimanager
+    m_guiTechniqueFilterKey = new Qt3DRender::QFilterKey;
+    m_guiTechniqueFilterKey->setName(QLatin1String("gui"));
+    m_guiTechniqueFilterKey->setValue(QLatin1String("1"));
 
     // The normal scene, filter for 'forward' which is set by the "default" materials in Qt3DExtras.
     // Change the key (or switch to RenderPassFilter, extend for multi-pass, etc.) when using custom materials.
@@ -161,10 +164,7 @@ void ImguiQt3DWindow::createFramegraph()
     m_guiCamera->setFarPlane(1);
     cameraSel->setCamera(m_guiCamera);
     tfilter = new Qt3DRender::QTechniqueFilter(cameraSel);
-    tfilterkey = new Qt3DRender::QFilterKey;
-    tfilterkey->setName(QLatin1String("gui"));
-    tfilterkey->setValue(QLatin1String("1"));
-    tfilter->addMatch(tfilterkey);
+    tfilter->addMatch(m_guiTechniqueFilterKey);
     // imgui provides "draw calls" in back-to-front order but that will get
     // lost in the pipeline with Qt3D. Ensure via a SortPolicy instead.
     Qt3DRender::QSortPolicy *sortPolicy = new Qt3DRender::QSortPolicy(tfilter);
