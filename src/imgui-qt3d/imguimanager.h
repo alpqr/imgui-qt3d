@@ -93,6 +93,7 @@ public:
     void setOutputInfoFunc(OutputInfoFunc f) { m_outputInfoFunc = f; }
 
     void initialize(Qt3DCore::QEntity *rootEntity);
+    void releaseResources();
 
     bool isEnabled() const { return m_enabled; }
     void setEnabled(bool enabled);
@@ -115,7 +116,7 @@ private:
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
-    struct Shared3D {
+    struct SharedRenderPassData {
         bool valid = false;
         Qt3DRender::QShaderProgram *progES2;
         Qt3DRender::QShaderProgram *progGL3;
@@ -127,7 +128,7 @@ private:
         Qt3DRender::QBlendEquationArguments *blendArgs;
         Qt3DRender::QCullFace *cullFace;
         QVector<Qt3DCore::QNode *> enabledToggle;
-    } q3d;
+    } rpd;
 
     struct CmdEntry {
         Qt3DCore::QEntity *entity = nullptr;

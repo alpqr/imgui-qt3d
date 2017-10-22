@@ -161,6 +161,16 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
     m_atlasTex->addTextureImage(new TextureImage(wrapperImg));
 }
 
+// To be called when the Qt 3D scene goes down (and thus destroys the objects
+// ImguiManager references) but the ImguiManager instance will be reused later
+// on. Must be followed by a call to initialize().
+void ImguiManager::releaseResources()
+{
+    // assume that everything starting from our root entity is already gone
+    rpd = SharedRenderPassData();
+    m_cmdList.clear();
+}
+
 void ImguiManager::resizePool(CmdListEntry *e, int newSize)
 {
     Q_ASSERT(m_outputInfo.guiTag && m_outputInfo.activeGuiTag);
@@ -401,34 +411,34 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         return prog;
     };
 
-    if (!q3d.valid) {
-        q3d.valid = true;
+    if (!rpd.valid) {
+        rpd.valid = true;
 
-        q3d.progES2 = buildShaderProgram(vertSrcES2, fragSrcES2);
-        q3d.progGL3 = buildShaderProgram(vertSrcGL3, fragSrcGL3);
+        rpd.progES2 = buildShaderProgram(vertSrcES2, fragSrcES2);
+        rpd.progGL3 = buildShaderProgram(vertSrcGL3, fragSrcGL3);
 
         // the framegraph is expected to filter for this key in its gui pass
-        q3d.techniqueFilterKey = m_outputInfo.guiTechniqueFilterKey;
+        rpd.techniqueFilterKey = m_outputInfo.guiTechniqueFilterKey;
 
-        q3d.texParam = new Qt3DRender::QParameter;
-        q3d.texParam->setName(QLatin1String("tex"));
-        q3d.texParam->setValue(QVariant::fromValue(m_atlasTex));
+        rpd.texParam = new Qt3DRender::QParameter;
+        rpd.texParam->setName(QLatin1String("tex"));
+        rpd.texParam->setValue(QVariant::fromValue(m_atlasTex));
 
-        q3d.depthTest = new Qt3DRender::QDepthTest;
-        q3d.depthTest->setDepthFunction(Qt3DRender::QDepthTest::Always);
+        rpd.depthTest = new Qt3DRender::QDepthTest;
+        rpd.depthTest->setDepthFunction(Qt3DRender::QDepthTest::Always);
 
-        q3d.noDepthWrite = new Qt3DRender::QNoDepthMask;
+        rpd.noDepthWrite = new Qt3DRender::QNoDepthMask;
 
-        q3d.blendFunc = new Qt3DRender::QBlendEquation;
-        q3d.blendArgs = new Qt3DRender::QBlendEquationArguments;
-        q3d.blendFunc->setBlendFunction(Qt3DRender::QBlendEquation::Add);
-        q3d.blendArgs->setSourceRgb(Qt3DRender::QBlendEquationArguments::SourceAlpha);
-        q3d.blendArgs->setDestinationRgb(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
-        q3d.blendArgs->setSourceAlpha(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
-        q3d.blendArgs->setDestinationAlpha(Qt3DRender::QBlendEquationArguments::Zero);
+        rpd.blendFunc = new Qt3DRender::QBlendEquation;
+        rpd.blendArgs = new Qt3DRender::QBlendEquationArguments;
+        rpd.blendFunc->setBlendFunction(Qt3DRender::QBlendEquation::Add);
+        rpd.blendArgs->setSourceRgb(Qt3DRender::QBlendEquationArguments::SourceAlpha);
+        rpd.blendArgs->setDestinationRgb(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
+        rpd.blendArgs->setSourceAlpha(Qt3DRender::QBlendEquationArguments::OneMinusSourceAlpha);
+        rpd.blendArgs->setDestinationAlpha(Qt3DRender::QBlendEquationArguments::Zero);
 
-        q3d.cullFace = new Qt3DRender::QCullFace;
-        q3d.cullFace->setMode(Qt3DRender::QCullFace::NoCulling);
+        rpd.cullFace = new Qt3DRender::QCullFace;
+        rpd.cullFace->setMode(Qt3DRender::QCullFace::NoCulling);
     }
 
     *scissor = new Qt3DRender::QScissorTest;
@@ -439,39 +449,39 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         Qt3DRender::QRenderPass *rpass = new Qt3DRender::QRenderPass;
         rpass->setShaderProgram(prog);
 
-        rpass->addParameter(q3d.texParam);
-        rpass->addRenderState(q3d.depthTest);
-        rpass->addRenderState(q3d.noDepthWrite);
-        rpass->addRenderState(q3d.blendFunc);
-        rpass->addRenderState(q3d.blendArgs);
-        rpass->addRenderState(q3d.cullFace);
+        rpass->addParameter(rpd.texParam);
+        rpass->addRenderState(rpd.depthTest);
+        rpass->addRenderState(rpd.noDepthWrite);
+        rpass->addRenderState(rpd.blendFunc);
+        rpass->addRenderState(rpd.blendArgs);
+        rpass->addRenderState(rpd.cullFace);
         rpass->addRenderState(*scissor);
 
         // Our setEnabled() maps to QNode::setEnabled() on the QRenderPass
         // hence the need for keeping track. This is simpler than playing with
         // QLayer on entities.
-        q3d.enabledToggle.append(rpass);
+        rpd.enabledToggle.append(rpass);
 
         return rpass;
     };
 
     Qt3DRender::QTechnique *techniqueES2 = new Qt3DRender::QTechnique;
-    techniqueES2->addFilterKey(q3d.techniqueFilterKey);
+    techniqueES2->addFilterKey(rpd.techniqueFilterKey);
     Qt3DRender::QGraphicsApiFilter *apiFilterES2 = techniqueES2->graphicsApiFilter();
     apiFilterES2->setApi(Qt3DRender::QGraphicsApiFilter::OpenGLES);
     apiFilterES2->setMajorVersion(2);
     apiFilterES2->setMinorVersion(0);
     apiFilterES2->setProfile(Qt3DRender::QGraphicsApiFilter::NoProfile);
-    techniqueES2->addRenderPass(buildRenderPass(q3d.progES2));
+    techniqueES2->addRenderPass(buildRenderPass(rpd.progES2));
 
     Qt3DRender::QTechnique *techniqueGL3 = new Qt3DRender::QTechnique;
-    techniqueGL3->addFilterKey(q3d.techniqueFilterKey);
+    techniqueGL3->addFilterKey(rpd.techniqueFilterKey);
     Qt3DRender::QGraphicsApiFilter *apiFilterGL3 = techniqueGL3->graphicsApiFilter();
     apiFilterGL3->setApi(Qt3DRender::QGraphicsApiFilter::OpenGL);
     apiFilterGL3->setMajorVersion(3);
     apiFilterGL3->setMinorVersion(2);
     apiFilterGL3->setProfile(Qt3DRender::QGraphicsApiFilter::CoreProfile);
-    techniqueGL3->addRenderPass(buildRenderPass(q3d.progGL3));
+    techniqueGL3->addRenderPass(buildRenderPass(rpd.progGL3));
 
     effect->addTechnique(techniqueES2);
     effect->addTechnique(techniqueGL3);
@@ -630,6 +640,6 @@ void ImguiManager::setEnabled(bool enabled)
 
     m_enabled = enabled;
 
-    for (Qt3DCore::QNode *n : q3d.enabledToggle)
+    for (Qt3DCore::QNode *n : rpd.enabledToggle)
         n->setEnabled(m_enabled);
 }
