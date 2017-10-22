@@ -93,6 +93,8 @@ int main(int argc, char **argv)
         inf.guiTechniqueFilterKey = w.guiTechniqueFilterKey();
         return inf;
     });
+    // uncomment to start with gui hidden
+    //guiMgr.setEnabled(false);
 
     w.setCreateSceneFunc([&guiMgr](Qt3DCore::QEntity *parent) {
         guiMgr.initialize(parent);
@@ -141,7 +143,7 @@ int main(int argc, char **argv)
         toggleTextTrans->setTranslation(QVector3D(-14, 7, -5));
         toggleTextTrans->setScale(0.5f);
         Qt3DExtras::QPhongMaterial *toggleTextMat = new Qt3DExtras::QPhongMaterial;
-        toggleTextMat->setDiffuse(Qt::green);
+        toggleTextMat->setDiffuse(guiMgr.isEnabled() ? Qt::green : Qt::red);
         toggleText->addComponent(toggleTextGeom);
         toggleText->addComponent(toggleTextTrans);
         toggleText->addComponent(toggleTextMat);
