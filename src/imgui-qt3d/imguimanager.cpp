@@ -120,7 +120,7 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
 
     Qt3DLogic::QFrameAction *frameUpdater = new Qt3DLogic::QFrameAction;
     QObject::connect(frameUpdater, &Qt3DLogic::QFrameAction::triggered, [this]() {
-        if (!m_frame || !m_outputInfoFunc)
+        if (!m_enabled || !m_frame || !m_outputInfoFunc)
             return;
 
         m_outputInfo = m_outputInfoFunc();
