@@ -582,6 +582,9 @@ void ImguiManager::setInputEventSource(QObject *src)
 
 void ImguiManager::updateInput()
 {
+    if (!m_inputEventFilter)
+        return;
+
     ImGuiIO &io = ImGui::GetIO();
 
     if (!m_inputInitialized) {
