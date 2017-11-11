@@ -512,10 +512,14 @@ public:
     Qt::KeyboardModifiers modifiers = Qt::NoModifier;
     bool keyDown[256 + (LASTSPECKEY - FIRSTSPECKEY + 1)];
     QString keyText;
+    bool enabled = true;
 };
 
 bool ImguiInputEventFilter::eventFilter(QObject *, QEvent *event)
 {
+    if (!enabled)
+        return false;
+
     switch (event->type()) {
     case QEvent::MouseButtonPress:
     case QEvent::MouseMove:
@@ -642,4 +646,7 @@ void ImguiManager::setEnabled(bool enabled)
 
     for (Qt3DCore::QNode *n : rpd.enabledToggle)
         n->setEnabled(m_enabled);
+
+    if (m_inputEventFilter)
+        m_inputEventFilter->enabled = m_enabled;
 }
