@@ -306,7 +306,7 @@ void ImguiManager::update3D()
         CmdListEntry *e = &m_cmdList[n];
 
         if (!e->vbuf) {
-            e->vbuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::VertexBuffer);
+            e->vbuf = new Qt3DRender::QBuffer;
             e->vbuf->setUsage(Qt3DRender::QBuffer::StreamDraw);
         }
         // NB! must make a copy in any case, fromRawData would be wrong here
@@ -324,7 +324,7 @@ void ImguiManager::update3D()
         e->vbuf->setData(vdata);
 
         if (!e->ibuf) {
-            e->ibuf = new Qt3DRender::QBuffer(Qt3DRender::QBuffer::IndexBuffer);
+            e->ibuf = new Qt3DRender::QBuffer;
             e->ibuf->setUsage(Qt3DRender::QBuffer::StreamDraw);
         }
         // same here
@@ -633,7 +633,7 @@ void ImguiManager::updateInput()
     if (!w->keyText.isEmpty()) {
         for (const QChar &c : w->keyText) {
             ImWchar u = c.unicode();
-            if (u > 0 && u < 0x10000)
+            if (u)
                 io.AddInputCharacter(u);
         }
         w->keyText.clear();
