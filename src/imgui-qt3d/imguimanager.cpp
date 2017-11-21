@@ -369,8 +369,8 @@ static const char *vertSrcES2 =
 
 static const char *fragSrcES2 =
         "uniform sampler2D tex;\n"
-        "varying vec2 uv;\n"
-        "varying vec4 color;\n"
+        "varying highp vec2 uv;\n"
+        "varying highp vec4 color;\n"
         "void main() {\n"
         "    gl_FragColor = color * texture2D(tex, uv);\n"
         "}\n";
