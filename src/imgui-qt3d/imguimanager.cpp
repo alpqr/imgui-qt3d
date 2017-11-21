@@ -85,13 +85,13 @@ class TextureImageDataGen : public Qt3DRender::QTextureImageDataGenerator
 public:
     TextureImageDataGen(const QImage &image) : m_image(image) { }
 
-    Qt3DRender::QTextureImageDataPtr operator()()
+    Qt3DRender::QTextureImageDataPtr operator()() override
     {
         Qt3DRender::QTextureImageDataPtr textureData = Qt3DRender::QTextureImageDataPtr::create();
         textureData->setImage(m_image);
         return textureData;
     }
-    bool operator==(const Qt3DRender::QTextureImageDataGenerator &other) const
+    bool operator==(const Qt3DRender::QTextureImageDataGenerator &other) const override
     {
         const TextureImageDataGen *otherFunctor = functor_cast<TextureImageDataGen>(&other);
         return otherFunctor && otherFunctor->m_image == m_image;
