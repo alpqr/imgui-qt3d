@@ -299,7 +299,7 @@ void ImguiManager::update3D()
 
     // CmdLists is in back-to-front order, assign z values accordingly
     const float zstep = 0.01f;
-    float z = d->CmdListsCount * -zstep;
+    float z = -1000;
 
     for (int n = 0; n < d->CmdListsCount; ++n) {
         const ImDrawList *cmdList = d->CmdLists[n];
@@ -315,10 +315,22 @@ void ImguiManager::update3D()
         // Initialize Z values. The shader does not need it but some Qt3D stuff (back-to-front sorting, bounding volumes) does.
         {
             ImDrawVert *v = (ImDrawVert *) vdata.data();
-            int sz = cmdList->VtxBuffer.Size;
-            while (sz-- > 0) {
-                v->z = z;
-                ++v;
+            uint idxOffset = 0;
+            // Assign a Z value per draw call, not per draw call list.
+            // This assumes no vertices are shared between the draw calls.
+
+            // ### unfortunately this still won't guarantee correct sorting due to https://bugreports.qt.io/browse/QTBUG-65590
+
+            for (int i = 0; i < cmdList->CmdBuffer.Size; ++i) {
+                const ImDrawCmd *cmd = &cmdList->CmdBuffer[i];
+                if (!cmd->UserCallback) {
+                    for (uint ei = 0; ei < cmd->ElemCount; ++ei) {
+                        ImDrawIdx idx = cmdList->IdxBuffer.Data[idxOffset + ei];
+                        v[idx].z = z;
+                    }
+                }
+                idxOffset += cmd->ElemCount;
+                z += zstep;
             }
         }
         e->vbuf->setData(vdata);
@@ -349,8 +361,6 @@ void ImguiManager::update3D()
             }
             indexBufOffset += cmd->ElemCount;
         }
-
-        z += zstep;
     }
 }
 
