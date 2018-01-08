@@ -318,9 +318,6 @@ void ImguiManager::update3D()
             uint idxOffset = 0;
             // Assign a Z value per draw call, not per draw call list.
             // This assumes no vertices are shared between the draw calls.
-
-            // ### unfortunately this still won't guarantee correct sorting due to https://bugreports.qt.io/browse/QTBUG-65590
-
             for (int i = 0; i < cmdList->CmdBuffer.Size; ++i) {
                 const ImDrawCmd *cmd = &cmdList->CmdBuffer[i];
                 if (!cmd->UserCallback) {
