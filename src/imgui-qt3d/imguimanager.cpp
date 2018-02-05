@@ -77,6 +77,7 @@
 #include <QBlendEquationArguments>
 #include <QNoDepthMask>
 #include <QCullFace>
+#include <QColorMask>
 #include <QScissorTest>
 #include <QFrameAction>
 
@@ -446,6 +447,9 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
 
         rpd.cullFace = new Qt3DRender::QCullFace;
         rpd.cullFace->setMode(Qt3DRender::QCullFace::NoCulling);
+
+        rpd.colorMask = new Qt3DRender::QColorMask;
+        rpd.colorMask->setAlphaMasked(false);
     }
 
     *scissor = new Qt3DRender::QScissorTest;
@@ -462,6 +466,7 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         rpass->addRenderState(rpd.blendFunc);
         rpass->addRenderState(rpd.blendArgs);
         rpass->addRenderState(rpd.cullFace);
+        rpass->addRenderState(rpd.colorMask);
         rpass->addRenderState(*scissor);
 
         // Our setEnabled() maps to QNode::setEnabled() on the QRenderPass
