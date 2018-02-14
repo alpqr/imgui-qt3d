@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "imguimanager.h"
 
 void Gui::frame()
 {
@@ -11,6 +12,10 @@ void Gui::frame()
         ImGui::ColorEdit3("clear color", (float*)&clear_color);
         if (ImGui::Button("Test Window")) show_test_window ^= 1;
         if (ImGui::Button("Another Window")) show_another_window ^= 1;
+        if (ImGui::Button("Scale up"))
+            m_manager->setScale(m_manager->scale() + 0.2f);
+        if (ImGui::Button("Scale down"))
+            m_manager->setScale(m_manager->scale() - 0.2f);
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     }
 

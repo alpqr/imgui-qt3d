@@ -57,6 +57,10 @@
 
 class ImguiInputEventFilter;
 
+namespace Qt3DCore {
+class QTransform;
+}
+
 namespace Qt3DRender {
 class QBuffer;
 class QTexture2D;
@@ -99,6 +103,9 @@ public:
     bool isEnabled() const { return m_enabled; }
     void setEnabled(bool enabled);
 
+    float scale() const { return m_scale; }
+    void setScale(float scale);
+
 private:
     struct CmdListEntry;
     void resizePool(CmdListEntry *e, int newSize);
@@ -114,6 +121,7 @@ private:
     ImguiInputEventFilter *m_inputEventFilter = nullptr;
     bool m_inputInitialized = false;
     bool m_enabled = true;
+    float m_scale = 1.0f;
 
     Qt3DCore::QEntity *m_rootEntity = nullptr;
     Qt3DRender::QTexture2D *m_atlasTex = nullptr;
@@ -135,6 +143,7 @@ private:
     struct CmdEntry {
         Qt3DCore::QEntity *entity = nullptr;
         Qt3DRender::QGeometryRenderer *geomRenderer = nullptr;
+        Qt3DCore::QTransform *transform = nullptr;
         Qt3DRender::QScissorTest *scissor = nullptr;
     };
 

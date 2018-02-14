@@ -83,6 +83,7 @@ int main(int argc, char **argv)
 
     Gui gui;
     ImguiManager guiMgr;
+    gui.setManager(&guiMgr);
     guiMgr.setFrameFunc(std::bind(&Gui::frame, &gui));
     guiMgr.setInputEventSource(&w);
     guiMgr.setOutputInfoFunc([&w]() {
