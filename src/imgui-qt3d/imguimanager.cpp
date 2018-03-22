@@ -139,7 +139,7 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
         // the Qt events have already been dispatched and processed.
 
         ImGui::NewFrame();
-        m_frame();
+        m_frame(m_rootEntity);
         ImGui::Render();
 
         update3D();

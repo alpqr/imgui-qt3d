@@ -83,7 +83,7 @@ class ImguiManager {
 public:
     ~ImguiManager();
 
-    typedef std::function<void()> FrameFunc;
+    typedef std::function<void(Qt3DCore::QEntity *)> FrameFunc;
     void setFrameFunc(FrameFunc f) { m_frame = f; }
 
     void setInputEventSource(QObject *src);
