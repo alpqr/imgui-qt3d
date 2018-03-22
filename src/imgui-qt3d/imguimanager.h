@@ -130,7 +130,6 @@ private:
         Qt3DRender::QShaderProgram *progES2;
         Qt3DRender::QShaderProgram *progGL3;
         Qt3DRender::QFilterKey *techniqueFilterKey;
-        Qt3DRender::QParameter *texParam;
         Qt3DRender::QDepthTest *depthTest;
         Qt3DRender::QNoDepthMask *noDepthWrite;
         Qt3DRender::QBlendEquation *blendFunc;
@@ -142,9 +141,11 @@ private:
 
     struct CmdEntry {
         Qt3DCore::QEntity *entity = nullptr;
+        Qt3DRender::QMaterial *material = nullptr;
         Qt3DRender::QGeometryRenderer *geomRenderer = nullptr;
         Qt3DCore::QTransform *transform = nullptr;
         Qt3DRender::QScissorTest *scissor = nullptr;
+        Qt3DRender::QParameter *texParam = nullptr;
     };
 
     struct CmdListEntry {

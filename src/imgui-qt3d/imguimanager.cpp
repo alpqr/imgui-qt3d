@@ -161,6 +161,8 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
 
     QImage wrapperImg((const uchar *) pixels, w, h, QImage::Format_RGBA8888);
     m_atlasTex->addTextureImage(new TextureImage(wrapperImg));
+
+    io.Fonts->SetTexID(m_atlasTex);
 }
 
 // To be called when the Qt 3D scene goes down (and thus destroys the objects
@@ -181,16 +183,24 @@ void ImguiManager::resizePool(CmdListEntry *e, int newSize)
     if (newSize > oldSize) {
         e->cmds.resize(newSize);
         for (int i = oldSize; i < newSize; ++i) {
+            CmdEntry *ecmd = &e->cmds[i];
             Qt3DCore::QEntity *entity = new Qt3DCore::QEntity(m_rootEntity);
             entity->addComponent(m_outputInfo.guiTag);
-            entity->addComponent(buildMaterial(&e->cmds[i].scissor));
+            Qt3DRender::QMaterial *material = buildMaterial(&ecmd->scissor);
+            entity->addComponent(material);
             Qt3DRender::QGeometryRenderer *geomRenderer = new Qt3DRender::QGeometryRenderer;
             entity->addComponent(geomRenderer);
             Qt3DCore::QTransform *transform = new Qt3DCore::QTransform;
             entity->addComponent(transform);
-            e->cmds[i].entity = entity;
-            e->cmds[i].geomRenderer = geomRenderer;
-            e->cmds[i].transform = transform;
+            Qt3DRender::QParameter *texParam = new Qt3DRender::QParameter;
+            texParam->setName(QLatin1String("tex"));
+            texParam->setValue(QVariant::fromValue(m_atlasTex)); // needs a valid initial value
+            material->addParameter(texParam);
+            ecmd->entity = entity;
+            ecmd->material = material;
+            ecmd->geomRenderer = geomRenderer;
+            ecmd->transform = transform;
+            ecmd->texParam = texParam;
         }
     }
 
@@ -352,16 +362,18 @@ void ImguiManager::update3D()
         const ImDrawIdx *indexBufOffset = nullptr;
         for (int i = 0; i < cmdList->CmdBuffer.Size; ++i) {
             const ImDrawCmd *cmd = &cmdList->CmdBuffer[i];
+            CmdEntry *ecmd = &e->cmds[i];
             if (!cmd->UserCallback) {
                 updateGeometry(e, i, cmd->ElemCount, cmdList->VtxBuffer.Size, cmdList->IdxBuffer.Size, indexBufOffset);
+                ecmd->texParam->setValue(QVariant::fromValue(static_cast<Qt3DRender::QAbstractTexture *>(cmd->TextureId)));
 
-                Qt3DRender::QScissorTest *scissor = e->cmds[i].scissor;
+                Qt3DRender::QScissorTest *scissor = ecmd->scissor;
                 scissor->setLeft(cmd->ClipRect.x);
                 scissor->setBottom(io.DisplaySize.y - cmd->ClipRect.w);
                 scissor->setWidth(cmd->ClipRect.z - cmd->ClipRect.x);
                 scissor->setHeight(cmd->ClipRect.w - cmd->ClipRect.y);
 
-                Qt3DCore::QTransform *transform = e->cmds[i].transform;
+                Qt3DCore::QTransform *transform = ecmd->transform;
                 transform->setScale(m_scale);
             } else {
                 cmd->UserCallback(cmdList, cmd);
@@ -439,10 +451,6 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         // the framegraph is expected to filter for this key in its gui pass
         rpd.techniqueFilterKey = m_outputInfo.guiTechniqueFilterKey;
 
-        rpd.texParam = new Qt3DRender::QParameter;
-        rpd.texParam->setName(QLatin1String("tex"));
-        rpd.texParam->setValue(QVariant::fromValue(m_atlasTex));
-
         rpd.depthTest = new Qt3DRender::QDepthTest;
         rpd.depthTest->setDepthFunction(Qt3DRender::QDepthTest::Always);
 
@@ -471,7 +479,6 @@ Qt3DRender::QMaterial *ImguiManager::buildMaterial(Qt3DRender::QScissorTest **sc
         Qt3DRender::QRenderPass *rpass = new Qt3DRender::QRenderPass;
         rpass->setShaderProgram(prog);
 
-        rpass->addParameter(rpd.texParam);
         rpass->addRenderState(rpd.depthTest);
         rpass->addRenderState(rpd.noDepthWrite);
         rpass->addRenderState(rpd.blendFunc);
