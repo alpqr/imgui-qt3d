@@ -3,4 +3,4 @@ meaning that direct usage of OpenGL or other graphics APIs is avoided and no pri
 
 Also a good example for integrating any foreign engine that streams vertex/index data.
 
-Tested with qt3d/dev. Should work with 5.10 and 5.9 too but those have not been tested.
+Tested with qt3d/5.11. Should work with dev and older branches as well but those have not been tested.
