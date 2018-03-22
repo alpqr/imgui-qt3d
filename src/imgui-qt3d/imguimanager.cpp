@@ -82,10 +82,10 @@
 #include <QScissorTest>
 #include <QFrameAction>
 
-class TextureImageDataGen : public Qt3DRender::QTextureImageDataGenerator
+class ImguiTextureImageDataGen : public Qt3DRender::QTextureImageDataGenerator
 {
 public:
-    TextureImageDataGen(const QImage &image) : m_image(image) { }
+    ImguiTextureImageDataGen(const QImage &image) : m_image(image) { }
 
     Qt3DRender::QTextureImageDataPtr operator()() override
     {
@@ -95,11 +95,11 @@ public:
     }
     bool operator==(const Qt3DRender::QTextureImageDataGenerator &other) const override
     {
-        const TextureImageDataGen *otherFunctor = functor_cast<TextureImageDataGen>(&other);
+        const ImguiTextureImageDataGen *otherFunctor = functor_cast<ImguiTextureImageDataGen>(&other);
         return otherFunctor && otherFunctor->m_image == m_image;
     }
 
-    QT3D_FUNCTOR(TextureImageDataGen)
+    QT3D_FUNCTOR(ImguiTextureImageDataGen)
 
 private:
     QImage m_image;
@@ -108,7 +108,7 @@ private:
 class TextureImage : public Qt3DRender::QAbstractTextureImage
 {
 public:
-    TextureImage(const QImage &image) { m_gen = QSharedPointer<TextureImageDataGen>::create(image); }
+    TextureImage(const QImage &image) { m_gen = QSharedPointer<ImguiTextureImageDataGen>::create(image); }
 
 private:
     Qt3DRender::QTextureImageDataGeneratorPtr dataGenerator() const override { return m_gen; }
