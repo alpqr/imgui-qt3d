@@ -90,6 +90,7 @@ public:
 
     struct OutputInfo {
         QSize size;
+        qreal dpr;
         Qt3DRender::QLayer *guiTag;
         Qt3DRender::QLayer *activeGuiTag;
         Qt3DRender::QFilterKey *guiTechniqueFilterKey;

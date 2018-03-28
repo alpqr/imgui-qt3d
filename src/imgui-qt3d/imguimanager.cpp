@@ -128,8 +128,8 @@ void ImguiManager::initialize(Qt3DCore::QEntity *rootEntity)
         m_outputInfo = m_outputInfoFunc();
 
         ImGuiIO &io = ImGui::GetIO();
-        io.DisplaySize.x = m_outputInfo.size.width();
-        io.DisplaySize.y = m_outputInfo.size.height();
+        io.DisplaySize.x = m_outputInfo.size.width() * m_outputInfo.dpr;
+        io.DisplaySize.y = m_outputInfo.size.height() * m_outputInfo.dpr;
 
         updateInput();
 
@@ -644,7 +644,7 @@ void ImguiManager::updateInput()
 
     ImguiInputEventFilter *w = m_inputEventFilter;
 
-    io.MousePos = ImVec2(w->mousePos.x() / m_scale, w->mousePos.y() / m_scale);
+    io.MousePos = ImVec2((w->mousePos.x() / m_scale) * m_outputInfo.dpr, (w->mousePos.y() / m_scale) * m_outputInfo.dpr);
 
     io.MouseDown[0] = w->mouseButtonsDown.testFlag(Qt::LeftButton);
     io.MouseDown[1] = w->mouseButtonsDown.testFlag(Qt::RightButton);

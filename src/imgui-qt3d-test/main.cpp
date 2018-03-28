@@ -87,12 +87,13 @@ int main(int argc, char **argv)
     guiMgr.setFrameFunc(std::bind(&Gui::frame, &gui, std::placeholders::_1));
     guiMgr.setInputEventSource(&w);
     guiMgr.setOutputInfoFunc([&w]() {
-        ImguiManager::OutputInfo inf;
-        inf.size = w.size() * w.devicePixelRatio();
-        inf.guiTag = w.guiTag();
-        inf.activeGuiTag = w.activeGuiTag();
-        inf.guiTechniqueFilterKey = w.guiTechniqueFilterKey();
-        return inf;
+        ImguiManager::OutputInfo outputInfo;
+        outputInfo.size = w.size();
+        outputInfo.dpr = w.devicePixelRatio();
+        outputInfo.guiTag = w.guiTag();
+        outputInfo.activeGuiTag = w.activeGuiTag();
+        outputInfo.guiTechniqueFilterKey = w.guiTechniqueFilterKey();
+        return outputInfo;
     });
     // uncomment to start with gui hidden
     //guiMgr.setEnabled(false);
