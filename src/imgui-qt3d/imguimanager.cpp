@@ -82,6 +82,12 @@
 #include <QScissorTest>
 #include <QFrameAction>
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+namespace core = Qt3DRender;
+#else
+namespace core = Qt3DCore;
+#endif
+
 class ImguiTextureImageDataGen : public Qt3DRender::QTextureImageDataGenerator
 {
 public:
@@ -222,23 +228,23 @@ void ImguiManager::resizePool(CmdListEntry *e, int newSize)
 void ImguiManager::updateGeometry(CmdListEntry *e, int idx, uint elemCount, int vertexCount, int indexCount, const void *indexOffset)
 {
     Qt3DRender::QGeometryRenderer *gr = e->cmds[idx].geomRenderer;
-    Qt3DRender::QGeometry *g = gr->geometry();
+    core::QGeometry *g = gr->geometry();
 
     if (!g) {
         gr->setPrimitiveType(Qt3DRender::QGeometryRenderer::Triangles);
-        g = new Qt3DRender::QGeometry;
+        g = new core::QGeometry;
 
         for (int i = 0; i < 4; ++i)
-            g->addAttribute(new Qt3DRender::QAttribute);
+            g->addAttribute(new core::QAttribute);
 
         const int vsize = 3; // assumes ImDrawVert was overridden in imconfig.h
         Q_ASSERT(sizeof(ImDrawVert) == (vsize + 2) * sizeof(float) + sizeof(ImU32));
 
-        const QVector<Qt3DRender::QAttribute *> attrs = g->attributes();
-        Qt3DRender::QAttribute *attr = attrs[0];
+        const QVector<core::QAttribute *> attrs = g->attributes();
+        core::QAttribute *attr = attrs[0];
         attr->setBuffer(e->vbuf);
-        attr->setName(Qt3DRender::QAttribute::defaultPositionAttributeName());
-        attr->setVertexBaseType(Qt3DRender::QAttribute::Float);
+        attr->setName(core::QAttribute::defaultPositionAttributeName());
+        attr->setVertexBaseType(core::QAttribute::Float);
         attr->setVertexSize(vsize);
         attr->setCount(vertexCount);
         attr->setByteOffset(0);
@@ -246,8 +252,8 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, uint elemCount, int 
 
         attr = attrs[1];
         attr->setBuffer(e->vbuf);
-        attr->setName(Qt3DRender::QAttribute::defaultTextureCoordinateAttributeName());
-        attr->setVertexBaseType(Qt3DRender::QAttribute::Float);
+        attr->setName(core::QAttribute::defaultTextureCoordinateAttributeName());
+        attr->setVertexBaseType(core::QAttribute::Float);
         attr->setVertexSize(2);
         attr->setCount(vertexCount);
         attr->setByteOffset(vsize * sizeof(float));
@@ -255,8 +261,8 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, uint elemCount, int 
 
         attr = attrs[2];
         attr->setBuffer(e->vbuf);
-        attr->setName(Qt3DRender::QAttribute::defaultColorAttributeName());
-        attr->setVertexBaseType(Qt3DRender::QAttribute::UnsignedByte);
+        attr->setName(core::QAttribute::defaultColorAttributeName());
+        attr->setVertexBaseType(core::QAttribute::UnsignedByte);
         attr->setVertexSize(4);
         attr->setCount(vertexCount);
         attr->setByteOffset((vsize + 2) * sizeof(float));
@@ -264,8 +270,8 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, uint elemCount, int 
 
         attr = attrs[3];
         attr->setBuffer(e->ibuf);
-        attr->setAttributeType(Qt3DRender::QAttribute::IndexAttribute);
-        attr->setVertexBaseType(sizeof(ImDrawIdx) == 2 ? Qt3DRender::QAttribute::UnsignedShort : Qt3DRender::QAttribute::UnsignedInt);
+        attr->setAttributeType(core::QAttribute::IndexAttribute);
+        attr->setVertexBaseType(sizeof(ImDrawIdx) == 2 ? core::QAttribute::UnsignedShort : core::QAttribute::UnsignedInt);
         attr->setVertexSize(1);
         attr->setCount(indexCount);
         attr->setByteOffset((quintptr) indexOffset);
@@ -274,10 +280,10 @@ void ImguiManager::updateGeometry(CmdListEntry *e, int idx, uint elemCount, int 
         gr->setGeometry(g);
     } else {
         // only update the potentially changing properties afterwards
-        const QVector<Qt3DRender::QAttribute *> attrs = g->attributes();
+        const QVector<core::QAttribute *> attrs = g->attributes();
         Q_ASSERT(attrs.count() == 4);
 
-        Qt3DRender::QAttribute *attr = attrs[0];
+        core::QAttribute *attr = attrs[0];
         attr->setBuffer(e->vbuf);
         attr->setCount(vertexCount);
 
@@ -323,8 +329,8 @@ void ImguiManager::update3D()
         CmdListEntry *e = &m_cmdList[n];
 
         if (!e->vbuf) {
-            e->vbuf = new Qt3DRender::QBuffer;
-            e->vbuf->setUsage(Qt3DRender::QBuffer::StreamDraw);
+            e->vbuf = new core::QBuffer;
+            e->vbuf->setUsage(core::QBuffer::StreamDraw);
         }
         // NB! must make a copy in any case, fromRawData would be wrong here
         // even if we did not need to insert the dummy z values.
@@ -350,8 +356,8 @@ void ImguiManager::update3D()
         e->vbuf->setData(vdata);
 
         if (!e->ibuf) {
-            e->ibuf = new Qt3DRender::QBuffer;
-            e->ibuf->setUsage(Qt3DRender::QBuffer::StreamDraw);
+            e->ibuf = new core::QBuffer;
+            e->ibuf->setUsage(core::QBuffer::StreamDraw);
         }
         // same here
         e->ibuf->setData(QByteArray((const char *) cmdList->IdxBuffer.Data, cmdList->IdxBuffer.Size * sizeof(ImDrawIdx)));
