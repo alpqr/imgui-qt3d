@@ -54,15 +54,27 @@
 #include <functional>
 #include <QSize>
 #include <QEntity>
+#include <QtGlobal>
 
 class ImguiInputEventFilter;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+namespace core = Qt3DRender;
+#else
+namespace core = Qt3DCore;
+#endif
+
 namespace Qt3DCore {
 class QTransform;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+class QBuffer;
+#endif
 }
 
 namespace Qt3DRender {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 class QBuffer;
+#endif
 class QTexture2D;
 class QMaterial;
 class QLayer;
@@ -150,8 +162,8 @@ private:
     };
 
     struct CmdListEntry {
-        Qt3DRender::QBuffer *vbuf = nullptr;
-        Qt3DRender::QBuffer *ibuf = nullptr;
+        core::QBuffer *vbuf = nullptr;
+        core::QBuffer *ibuf = nullptr;
         QVector<CmdEntry> cmds;
         int activeSize = 0;
     };
